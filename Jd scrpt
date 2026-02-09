@@ -1,0 +1,81 @@
+class_name Player
+extends CharacterBody2D
+
+@export var speed: int = 30
+
+@export var Animations: AnimatedSprite2D
+@export var Collision: CollisionShape2D
+
+@export_subgroup("Camera")
+@export var Camera: Camera2D
+@export var max_zoom: int = 2
+@export var min_zoom: int = 4
+
+#func _init():
+	#add_to_group(Groups.Characters.PLAYER)
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	
+	if is_multiplayer_authority():
+		Camera.enabled = true
+		Camera.zoom = Vector2(min_zoom,min_zoom)
+
+	pass # Replace with function body.
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(_delta: float) -> void:
+	
+	if is_multiplayer_authority():
+	
+		var _horizontal_direction: float = (
+			Input.get_action_strength("move_right") - Input.get_action_strength("move_left")
+		)
+		
+		var _vertical_direction: float = (
+			Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+		)
+		
+		velocity.x = _horizontal_direction * speed
+		velocity.y = _vertical_direction * speed
+		
+	
+		if _vertical_direction != 0 && _horizontal_direction == 0:
+			if _vertical_direction < 0:
+				Animations.play("walk_up")
+			elif _vertical_direction > 0:
+				Animations.play("walk_down")
+		
+		if _horizontal_direction != 0:
+			Animations.play("walk_side")
+			if _horizontal_direction < 0:
+				Animations.flip_h = true
+			else:
+				Animations.flip_h = false
+		
+		
+	
+		if velocity == Vector2.ZERO:
+			Animations.play("idle")
+			position = position.snapped(Vector2i.ONE)
+		
+		move_and_slide()
+		
+	pass
+
+
+
+
+func _input(event: InputEvent) -> void:
+	
+	if Camera.zoom.x <= min_zoom:
+		if event.is_action_pressed("scroll_up"):
+			print("Zooming camera: ", Camera.zoom)
+			Camera.zoom += Vector2.ONE
+	if Camera.zoom.x >= max_zoom && Camera.zoom.x != 1:
+		if event.is_action_pressed("scroll_down"):
+			print("Zooming camera: ", Camera.zoom)
+			Camera.zoom -= Vector2.ONE
+	
+	
